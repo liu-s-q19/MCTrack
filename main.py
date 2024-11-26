@@ -92,10 +92,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset",
         type=str,
-        default="kitti",
+        default="nuscenes",
         help="Which Dataset: kitti/nuscenes/waymo",
     )
-    parser.add_argument("--eval", "-e", action="store_true", help="evaluation")
+    parser.add_argument("--eval", "-e", default=True, action="store_true", help="evaluation")
     parser.add_argument("--load_image", "-lm", action="store_true", help="load_image")
     parser.add_argument("--load_point", "-lp", action="store_true", help="load_point")
     parser.add_argument("--debug", action="store_true", help="debug")
@@ -132,6 +132,10 @@ if __name__ == "__main__":
         data = json.load(file)
         print("Data loaded successfully.")
 
+    json_path = os.path.join(save_path, "config.json")  # 在 save_path 下保存为 config.json
+    with open(json_path, "w") as json_file:
+        json.dump(cfg, json_file, indent=4)  # 使用 indent=4 格式化 JSON
+
     if args.debug:
         if args.dataset == "kitti":
             scene_lists = [str(scene_id).zfill(4) for scene_id in cfg["TRACKING_SEQS"]]
@@ -163,14 +167,15 @@ if __name__ == "__main__":
             eval_kitti(cfg)
     if args.dataset == "nuscenes":
         save_results_nuscenes(tracking_results, save_path)
-        save_results_nuscenes_for_motion(tracking_results, save_path)
+        # save_results_nuscenes_for_motion(tracking_results, save_path)
         if args.eval:
             eval_nusc(cfg)
     elif args.dataset == "waymo":
         save_results_waymo(tracking_results, save_path)
         if args.eval:
             eval_waymo(cfg, save_path)
-
+            
+        
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Elapsed time: {elapsed_time} seconds")

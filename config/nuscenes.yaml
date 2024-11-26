@@ -6,11 +6,10 @@ DATASET: "nuscenes"
 
 # dataset info
 SPLIT: "val" # val, test
-DETECTOR: centerpoint  # centerpoint, largekernel
-DATASET_ROOT: "s3://wangxiyang/open_datasets/nuscenes/raw_data/" 
-# DATASET_ROOT: "data/nuscenes/datasets/"  # 开源用这个
-DETECTIONS_ROOT: "data/base_version/nuscenes/"
-SAVE_PATH: "results/"
+DETECTOR: centerpoint  # centerpoint, test_LargeKernel3D
+DATASET_ROOT: "/home/liushiqi/liusq/MCTrack/data/nuscenes" 
+DETECTIONS_ROOT: "/home/liushiqi/liusq/MCTrack/data/nuscenes/base_version"
+SAVE_PATH: "result/"
 TRACKING_MODE: 'ONLINE' # ONLINE / GLOBAL
 IS_RV_MATCHING: False  # True / False
 FRAME_RATE: 2
@@ -50,6 +49,7 @@ THRESHOLD:
   COST_STATE_PREDICT_RATION: {0: 1.0, 1: 1.0, 2: 1.0, 3: 0.5, 4: 1.0, 5: 1.0, 6: 1.0}
   NMS_THRE: {0: 0.04, 1: 0.08, 2: 0.08, 3: 0.06, 4: 0.08, 5: 0.12, 6: 0.05}  
   BEV:
+    ADJUST_THRE: True
     COST_THRE: {0: 1.10, 1: 2.06, 2: 2.00, 3: 2.06, 4: 1.60, 5: 1.26, 6: 1.16}
     WEIGHT_RO_GDIOU: {
       0: {"w1": 0.5, "w2": 1.5}, 
@@ -61,6 +61,7 @@ THRESHOLD:
       6: {"w1": 1.0, "w2": 1.0}, 
     }
   RV:
+    ADJUST_THRE: True
     COST_THRE: {0: -0.3, 1: -0.3, 2: -0.3, 3: -0.3, 4: -0.3, 5: -0.3, 6: -0.3} 
 
   TRAJECTORY_THRE:
@@ -75,9 +76,47 @@ THRESHOLD:
 
 KALMAN_FILTER_POSE:
   MOTION_MODE: {0: "CV", 1: "CV", 2: "CV", 3: "CV", 4: "CV", 5: "CV", 6: "CV"} # CV, CA, CTRA
+  # MOTION_MODE: {0: "NANO_CTRA", 1: "NANO_CTRA", 2: "NANO_CTRA", 3: "NANO_CTRA", 4: "NANO_CTRA", 5: "NANO_CTRA", 6: "NANO_CTRA"}
+  # MOTION_MODE: {0: "NANO", 1: "NANO", 2: "NANO", 3: "NANO", 4: "NANO", 5: "NANO", 6: "NANO"} 
   CV:
     N: 4   # State Dimension
     M: 4   # Measure Dimension
+    NOISE:
+      0:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [0.7, 0.7, 0.5, 0.5]
+      1:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [1.5, 1.5, 1.5, 1.5]
+        R: [2.0, 2.0, 3.5, 3.5]
+      2:
+        P: [1.0, 1.0, 1.0, 1.0]
+        Q: [0.3, 0.3, 1.0, 1.0]
+        R: [0.1, 0.1, 1.0, 1.0]
+      3:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 4.0, 4.0]
+        R: [0.1, 0.1, 0.1, 0.1]
+      4:
+        P: [100.0, 100.0, 100.0, 100.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [1.5, 1.5, 500, 500]
+      5:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.3, 0.3, 0.1, 0.1]
+        R: [2.0, 2.0, 2.5, 2.5]
+      6:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.1, 0.1, 2.0, 2.0]
+        R: [1.5, 1.5, 4.0, 4.0]
+  NANO:
+    N: 4   # State Dimension
+    M: 4   # Measure Dimension
+    LOSS_TYPE: 'beta_loss' # 'weighted_loss', 'loglikelihood_loss' 'beta_loss' 'huber_loss'
+    INIT_TYPE: 'iekf'
+    BETA: 0.001
+    N_ITER: 1
     NOISE:
       0:
         P: [1.0, 1.0, 10.0, 10.0]
@@ -172,9 +211,83 @@ KALMAN_FILTER_POSE:
         Q: [2.0, 2.0, 1.0, 0.5, 1.0, 1.5]
         R: [0.5, 0.5]
 
+  NANO_CTRA:
+    N: 6   # State Dimension
+    M: 2   # Measure Dimension
+    LOSS_TYPE: 'beta_loss' # 'weighted_loss', 'loglikelihood_loss' 'beta_loss' 'huber_loss'
+    INIT_TYPE: 'iekf'
+    BETA: 0.0001
+    N_ITER: 1
+    NOISE:
+      0:
+        P: [1.0, 1.0, 10.0, 10.0, 10.0, 10.0]
+        Q: [2.0, 2.0, 1.0, 0.5, 1.0, 1.5]
+        R: [0.5, 0.5]
+      1:
+        P: [1.0, 1.0, 10.0, 10.0, 10.0, 10.0]
+        Q: [2.0, 2.0, 1.0, 0.5, 1.0, 1.5]
+        R: [0.5, 0.5]
+      2:
+        P: [1.0, 1.0, 10.0, 10.0, 10.0, 10.0]
+        Q: [2.0, 2.0, 1.0, 0.5, 1.0, 1.5]
+        R: [0.5, 0.5]
+      3:
+        P: [1.0, 1.0, 10.0, 10.0, 10.0, 10.0]
+        Q: [2.0, 2.0, 1.0, 0.5, 1.0, 1.5]
+        R: [0.5, 0.5]
+      4:
+        P: [1.0, 1.0, 10.0, 10.0, 10.0, 10.0]
+        Q: [2.0, 2.0, 1.0, 0.5, 1.0, 1.5]
+        R: [0.5, 0.5]
+      5:
+        P: [1.0, 1.0, 10.0, 10.0, 10.0, 10.0]
+        Q: [2.0, 2.0, 1.0, 0.5, 1.0, 1.5]
+        R: [0.5, 0.5]
+      6:
+        P: [1.0, 1.0, 10.0, 10.0, 10.0, 10.0]
+        Q: [2.0, 2.0, 1.0, 0.5, 1.0, 1.5]
+        R: [0.5, 0.5]
+
 KALMAN_FILTER_SIZE:
-  MOTION_MODE: {0: "CV", 1: "CV", 2: "CV", 3: "CV", 4: "CV", 5: "CV", 6: "CV"}
+  # MOTION_MODE: {0: "CV", 1: "CV", 2: "CV", 3: "CV", 4: "CV", 5: "CV", 6: "CV"}
+  MOTION_MODE: {0: "NANO", 1: "NANO", 2: "NANO", 3: "NANO", 4: "NANO", 5: "NANO", 6: "NANO"}
   CV:
+    N: 4   # State Dimension
+    M: 2   # Measure Dimension
+    NOISE:
+      0:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [2.0, 2.0]
+      1:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [2.0, 2.0]
+      2:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [2.0, 2.0]
+      3:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [2.0, 2.0]
+      4:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [2.0, 2.0]
+      5:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [2.0, 2.0]
+      6:
+        P: [1.0, 1.0, 10.0, 10.0]
+        Q: [0.5, 0.5, 1.5, 1.5]
+        R: [2.0, 2.0]
+  NANO:
+    LOSS_TYPE: 'beta_loss' # 'weighted_loss', 'loglikelihood_loss' 'beta_loss' 'huber_loss'
+    INIT_TYPE: 'iekf'
+    BETA: 0.0001
+    N_ITER: 1
     N: 4   # State Dimension
     M: 2   # Measure Dimension
     NOISE:
@@ -209,6 +322,7 @@ KALMAN_FILTER_SIZE:
 
 KALMAN_FILTER_YAW:
   MOTION_MODE: {0: "CV", 1: "CV", 2: "CV", 3: "CV", 4: "CV", 5: "CV", 6: "CV"}
+  # MOTION_MODE: {0: "NANO", 1: "NANO", 2: "NANO", 3: "NANO", 4: "NANO", 5: "NANO", 6: "NANO"}
   CV:
     N: 2   # State Dimension
     M: 2   # Measure Dimension
@@ -241,8 +355,44 @@ KALMAN_FILTER_YAW:
         P: [0.1, 0.1]
         Q: [0.1, 0.1]
         R: [0.2, 5.0]
+  NANO:
+    N: 2   # State Dimension
+    M: 2   # Measure Dimension
+    LOSS_TYPE: 'beta_loss' # 'weighted_loss', 'loglikelihood_loss' 'beta_loss' 'huber_loss'
+    INIT_TYPE: 'iekf'
+    N_ITER: 2
+    NOISE:
+      0:
+        P: [0.1, 0.1]
+        Q: [0.1, 0.1]
+        R: [0.2, 5.0]
+      1:
+        P: [0.1, 0.1]
+        Q: [0.1, 0.1]
+        R: [0.2, 5.0]
+      2:
+        P: [0.1, 0.1]
+        Q: [0.1, 0.1]
+        R: [0.2, 5.0]
+      3:
+        P: [0.1, 0.1]
+        Q: [0.1, 0.1]
+        R: [0.2, 5.0]
+      4:
+        P: [0.1, 0.1]
+        Q: [0.1, 0.1]
+        R: [0.2, 5.0]
+      5:
+        P: [0.1, 0.1]
+        Q: [0.1, 0.1]
+        R: [0.2, 5.0]
+      6:
+        P: [0.1, 0.1]
+        Q: [0.1, 0.1]
+        R: [0.2, 5.0]
 
 KALMAN_FILTER_RVBOX:
+  NANO_FLAG: False
   MOTION_MODE: {0: "CV"}
   CV:
     N: 8   # State Dimension

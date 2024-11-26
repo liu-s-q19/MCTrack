@@ -487,7 +487,7 @@ def convert_baseversion_bboxes(bboxes, global2ego, cameras_transform_matrix):
 
 def nuscenes_main(raw_data_path, dets_path, detector, save_path, split):
     start_time = time.time()
-    dets_path = os.path.join(dets_path, detector, split + ".json")
+    dets_path = os.path.join(dets_path, split, detector + ".json")
     dets_json = load_file(dets_path)
     if split == "test":
         scene_names = splits.create_splits_scenes()["test"]

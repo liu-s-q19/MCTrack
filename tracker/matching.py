@@ -9,7 +9,7 @@ from tracker.cost_function import *
 from utils.utils import mask_tras_dets
 
 
-def Greedy(cost_matrix, thresholds):
+def Greedy(cost_matrix, thresholds, adjust=False):
     """
     Refer: https://github.com/lixiaoyu2000/Poly-MOT/blob/main/utils/matching.py
     Info: This function implements the Greedy matching algorithm.
@@ -35,6 +35,9 @@ def Greedy(cost_matrix, thresholds):
         len(thresholds) == cost_matrix.shape[0]
     ), "the number of thresholds should be egual to cost matrix number."
 
+    if adjust:
+        thresholds = adjust_thresholds(cost_matrix, thresholds)
+    
     # solve cost matrix
     m_det, m_tra = [], []
     costs = []
@@ -58,7 +61,30 @@ def Greedy(cost_matrix, thresholds):
     return m_det, m_tra, um_det, um_tra, np.array(costs)
 
 
-def Hungarian(cost_matrix, thresholds):
+def adjust_thresholds(cost_matrix, thresholds, kain=2):
+    """
+    If the size of the second dimension of the cost_matrix is half of the size of the third dimension,
+    adjust the thresholds to be twice their original value.
+    
+    Parameters:
+    cost_matrix (numpy.ndarray): A matrix of shape (cls_num, trajs, dets), 
+                                  representing (number of classes, number of trajectory labels, number of detection labels).
+    thresholds (float or numpy.ndarray): The current threshold(s), can be a scalar or an array related to cost_matrix.
+    
+    Returns:
+    thresholds: The adjusted thresholds based on the condition.
+    """
+    # Get the shape of the cost_matrix
+    _, second_dim, third_dim = cost_matrix.shape
+    
+    # Check if the second dimension size is less than half of the third dimension size
+    if second_dim * 2 < third_dim:
+        # If the condition is met, multiply thresholds by kain
+        thresholds = {key: value * kain for key, value in thresholds.items()}
+    
+    return thresholds
+
+def Hungarian(cost_matrix, thresholds, adjust=False):
     """
     Refer: https://github.com/lixiaoyu2000/Poly-MOT/blob/main/utils/matching.py
     Info: This function implements the Hungarian algorithm using the Linear Assignment Problem solver (lapjv).
@@ -80,7 +106,10 @@ def Hungarian(cost_matrix, thresholds):
     assert (
         len(thresholds) == cost_matrix.shape[0]
     ), "the number of thresholds should be equal to cost matrix number."
-
+    
+    if adjust:
+        thresholds = adjust_thresholds(cost_matrix, thresholds)
+    
     # solve cost matrix
     m_det, m_tra = [], []
     costs = []
@@ -120,7 +149,8 @@ def match_trajs_and_dets(trajs, dets, cfg, transform_matrix=None, is_rv=False):
     """
     if len(trajs) == 0 or len(dets) == 0:
         return np.empty((0, 2), dtype=int), np.empty((0, 2), dtype=int)
-
+    # print("trajs", len(trajs))
+    # print("dets", len(dets))
     cost_matrix, trajs_category, dets_category = cost_calculate_general(
         trajs, dets, cfg, transform_matrix, is_rv
     )
@@ -138,6 +168,7 @@ def match_trajs_and_dets(trajs, dets, cfg, transform_matrix=None, is_rv=False):
     trans_cost_matrix = cost_matrix.T
     trans_cost_matrix = trans_cost_matrix[None, :, :].repeat(cls_num, axis=0)
     trans_cost_matrix[np.where(~trans_valid_mask)] = np.inf
+    
 
     if min(cost_matrix.shape) > 0:
         if cfg["MATCHING"][match_type]["MATCHING_MODE"] == "Hungarian":
@@ -151,6 +182,7 @@ def match_trajs_and_dets(trajs, dets, cfg, transform_matrix=None, is_rv=False):
             m_det, m_tra, um_det, um_tra, costs = Greedy(
                 trans_cost_matrix,
                 cfg["THRESHOLD"][match_type]["COST_THRE"],
+                cfg["MATCHING"][match_type]["ADJUST_THRE"],
             )
             assert len(m_det) == len(m_tra)
             matched_indices = np.column_stack((m_tra, m_det))

@@ -81,7 +81,7 @@ class Trajectory:
             n=cfg["KALMAN_FILTER_POSE"]["CV"]["N"],
             m=cfg["KALMAN_FILTER_POSE"]["CV"]["M"],
             P=np.diag(cfg["KALMAN_FILTER_POSE"]["CV"]["NOISE"][self.category_num]["P"]),
-            Q=np.diag(cfg["KALMAN_FILTER_POSE"]["CV"]["NOISE"][self.category_num]["Q"]),
+            Q=np.diag(cfg["KALMAN_FILTER_POSE"]["CV"]["NOISE"][self.category_num]["Q"])*100,
             R=np.diag(cfg["KALMAN_FILTER_POSE"]["CV"]["NOISE"][self.category_num]["R"]),
             init_x=cv_init_pose,
         )
@@ -103,24 +103,84 @@ class Trajectory:
             R=np.diag(cfg["KALMAN_FILTER_POSE"]["CTRA"]["NOISE"][self.category_num]["R"]),
             init_x=ctra_init_pose,
         )
-        self.kalman_filter_yaw = KF_YAW(
+        self.nano_cv_filter_pose  = NANO_CV(
             dt=1 / self.frame_rate,
-            n=cfg["KALMAN_FILTER_YAW"]["CV"]["N"],
-            m=cfg["KALMAN_FILTER_YAW"]["CV"]["M"],
-            P=np.diag(cfg["KALMAN_FILTER_YAW"]["CV"]["NOISE"][self.category_num]["P"]),
-            Q=np.diag(cfg["KALMAN_FILTER_YAW"]["CV"]["NOISE"][self.category_num]["Q"]),
-            R=np.diag(cfg["KALMAN_FILTER_YAW"]["CV"]["NOISE"][self.category_num]["R"]),
+            n=cfg["KALMAN_FILTER_POSE"]["NANO"]["N"],
+            m=cfg["KALMAN_FILTER_POSE"]["NANO"]["M"],
+            P=np.diag(cfg["KALMAN_FILTER_POSE"]["NANO"]["NOISE"][self.category_num]["P"]),
+            Q=np.diag(cfg["KALMAN_FILTER_POSE"]["NANO"]["NOISE"][self.category_num]["Q"]),
+            R=np.diag(cfg["KALMAN_FILTER_POSE"]["NANO"]["NOISE"][self.category_num]["R"]),
+            init_x=cv_init_pose,
+            loss_type=cfg["KALMAN_FILTER_POSE"]["NANO"]["LOSS_TYPE"],
+            init_type=cfg["KALMAN_FILTER_POSE"]["NANO"]["INIT_TYPE"],
+            n_iterations=cfg["KALMAN_FILTER_POSE"]["NANO"]["N_ITER"],
+            beta=cfg['KALMAN_FILTER_POSE']['NANO']['BETA'],
+        )
+        self.nano_ctra_filter_pose  = NANO_CTRA(
+            dt=1 / self.frame_rate,
+            n=cfg["KALMAN_FILTER_POSE"]["NANO_CTRA"]["N"],
+            m=cfg["KALMAN_FILTER_POSE"]["NANO_CTRA"]["M"],
+            P=np.diag(cfg["KALMAN_FILTER_POSE"]["NANO_CTRA"]["NOISE"][self.category_num]["P"]),
+            Q=np.diag(cfg["KALMAN_FILTER_POSE"]["NANO_CTRA"]["NOISE"][self.category_num]["Q"]),
+            R=np.diag(cfg["KALMAN_FILTER_POSE"]["NANO_CTRA"]["NOISE"][self.category_num]["R"]),
+            init_x=ctra_init_pose,
+            loss_type=cfg["KALMAN_FILTER_POSE"]["NANO_CTRA"]["LOSS_TYPE"],
+            init_type=cfg["KALMAN_FILTER_POSE"]["NANO_CTRA"]["INIT_TYPE"],
+            n_iterations=cfg["KALMAN_FILTER_POSE"]["NANO_CTRA"]["N_ITER"],
+            beta=cfg['KALMAN_FILTER_POSE']['NANO_CTRA']['BETA'],
+        )
+        if cfg["KALMAN_FILTER_YAW"]["MOTION_MODE"][self.category_num] == "CV":
+            self.kalman_filter_yaw = KF_YAW(
+                dt=1 / self.frame_rate,
+                n=cfg["KALMAN_FILTER_YAW"]["CV"]["N"],
+                m=cfg["KALMAN_FILTER_YAW"]["CV"]["M"],
+                P=np.diag(cfg["KALMAN_FILTER_YAW"]["CV"]["NOISE"][self.category_num]["P"]),
+                Q=np.diag(cfg["KALMAN_FILTER_YAW"]["CV"]["NOISE"][self.category_num]["Q"]),
+                R=np.diag(cfg["KALMAN_FILTER_YAW"]["CV"]["NOISE"][self.category_num]["R"]),
+                init_x=cv_init_yaw,
+            )
+        elif cfg["KALMAN_FILTER_YAW"]["MOTION_MODE"][self.category_num] == "NANO":
+            self.kalman_filter_yaw = NANO_YAW(
+            dt=1 / self.frame_rate,
+            n=cfg["KALMAN_FILTER_YAW"]["NANO"]["N"],
+            m=cfg["KALMAN_FILTER_YAW"]["NANO"]["M"],
+            P=np.diag(cfg["KALMAN_FILTER_YAW"]["NANO"]["NOISE"][self.category_num]["P"]),
+            Q=np.diag(cfg["KALMAN_FILTER_YAW"]["NANO"]["NOISE"][self.category_num]["Q"]),
+            R=np.diag(cfg["KALMAN_FILTER_YAW"]["NANO"]["NOISE"][self.category_num]["R"]),
             init_x=cv_init_yaw,
-        )
-        self.kalman_filter_size = KF_SIZE(
+            loss_type=cfg["KALMAN_FILTER_YAW"]["NANO"]["LOSS_TYPE"],
+            init_type=cfg["KALMAN_FILTER_YAW"]["NANO"]["INIT_TYPE"],
+            n_iterations=cfg["KALMAN_FILTER_YAW"]["NANO"]["N_ITER"],    
+            )
+        else:
+            raise ValueError(f"Unexpected motion mode: {cfg['KALMAN_FILTER_YAW']['MOTION_MODE'][self.category_num]}")
+        
+        if cfg["KALMAN_FILTER_SIZE"]["MOTION_MODE"][self.category_num] == "CV":
+            self.kalman_filter_size = KF_SIZE(
+                dt=1 / self.frame_rate,
+                n=cfg["KALMAN_FILTER_SIZE"]["CV"]["N"],
+                m=cfg["KALMAN_FILTER_SIZE"]["CV"]["M"],
+                P=np.diag(cfg["KALMAN_FILTER_SIZE"]["CV"]["NOISE"][self.category_num]["P"]),
+                Q=np.diag(cfg["KALMAN_FILTER_SIZE"]["CV"]["NOISE"][self.category_num]["Q"]),
+                R=np.diag(cfg["KALMAN_FILTER_SIZE"]["CV"]["NOISE"][self.category_num]["R"]),
+                init_x=cv_init_size,
+                bata=cfg['KALMAN_FILTER_SIZE']['CV']['BETA']
+            )
+        elif cfg["KALMAN_FILTER_SIZE"]["MOTION_MODE"][self.category_num] == "NANO":
+            self.kalman_filter_size  = NANO_SIZE(
             dt=1 / self.frame_rate,
-            n=cfg["KALMAN_FILTER_SIZE"]["CV"]["N"],
-            m=cfg["KALMAN_FILTER_SIZE"]["CV"]["M"],
-            P=np.diag(cfg["KALMAN_FILTER_SIZE"]["CV"]["NOISE"][self.category_num]["P"]),
-            Q=np.diag(cfg["KALMAN_FILTER_SIZE"]["CV"]["NOISE"][self.category_num]["Q"]),
-            R=np.diag(cfg["KALMAN_FILTER_SIZE"]["CV"]["NOISE"][self.category_num]["R"]),
+            n=cfg["KALMAN_FILTER_SIZE"]["NANO"]["N"],
+            m=cfg["KALMAN_FILTER_SIZE"]["NANO"]["M"],
+            P=np.diag(cfg["KALMAN_FILTER_SIZE"]["NANO"]["NOISE"][self.category_num]["P"]),
+            Q=np.diag(cfg["KALMAN_FILTER_SIZE"]["NANO"]["NOISE"][self.category_num]["Q"]),
+            R=np.diag(cfg["KALMAN_FILTER_SIZE"]["NANO"]["NOISE"][self.category_num]["R"]),
             init_x=cv_init_size,
+            loss_type=cfg["KALMAN_FILTER_SIZE"]["NANO"]["LOSS_TYPE"],
+            init_type=cfg["KALMAN_FILTER_SIZE"]["NANO"]["INIT_TYPE"],
+            n_iterations=cfg["KALMAN_FILTER_SIZE"]["NANO"]["N_ITER"],
         )
+        else:
+            raise ValueError(f"Unexpected motion mode: {cfg['KALMAN_FILTER_SIZE']['MOTION_MODE'][self.category_num]}")  
         
         if cfg["KALMAN_FILTER_POSE"]["MOTION_MODE"][self.category_num] == "CV":
             self.kalman_filter_pose = self.cv_filter_pose
@@ -128,6 +188,12 @@ class Trajectory:
             self.kalman_filter_pose = self.ca_filter_pose 
         elif cfg["KALMAN_FILTER_POSE"]["MOTION_MODE"][self.category_num] == "CTRA":
             self.kalman_filter_pose = self.ctra_filter_pose 
+        elif cfg["KALMAN_FILTER_POSE"]["MOTION_MODE"][self.category_num] == "NANO":
+            self.kalman_filter_pose = self.nano_cv_filter_pose
+        elif cfg["KALMAN_FILTER_POSE"]["MOTION_MODE"][self.category_num] == "NANO_CTRA":
+            self.kalman_filter_pose = self.nano_ctra_filter_pose
+        else:
+            raise ValueError(f"Unexpected motion mode: {cfg['KALMAN_FILTER_POSE']['MOTION_MODE'][self.category_num]}")
         
         # if cfg["IS_RV_MATCHING"]:
         #     xywh = init_bbox.transform_bbox_tlbr2xywh()

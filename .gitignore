@@ -10,3 +10,5 @@ data
 new_data/
 val.json
 waymo-od/
+result/
+**/result/
