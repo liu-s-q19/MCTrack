@@ -9,7 +9,7 @@ from tracker.cost_function import *
 from utils.utils import mask_tras_dets
 
 
-def Greedy(cost_matrix, thresholds, adjust=False):
+def Greedy(cost_matrix, thresholds):
     """
     Refer: https://github.com/lixiaoyu2000/Poly-MOT/blob/main/utils/matching.py
     Info: This function implements the Greedy matching algorithm.
@@ -35,8 +35,6 @@ def Greedy(cost_matrix, thresholds, adjust=False):
         len(thresholds) == cost_matrix.shape[0]
     ), "the number of thresholds should be egual to cost matrix number."
 
-    if adjust:
-        thresholds = adjust_thresholds(cost_matrix, thresholds)
     
     # solve cost matrix
     m_det, m_tra = [], []
@@ -61,7 +59,7 @@ def Greedy(cost_matrix, thresholds, adjust=False):
     return m_det, m_tra, um_det, um_tra, np.array(costs)
 
 
-def adjust_thresholds(cost_matrix, thresholds, kain=2):
+def adjust_thresholds(cost_matrix, thresholds, kain, adjust_thre):
     """
     If the size of the second dimension of the cost_matrix is half of the size of the third dimension,
     adjust the thresholds to be twice their original value.
@@ -76,15 +74,17 @@ def adjust_thresholds(cost_matrix, thresholds, kain=2):
     """
     # Get the shape of the cost_matrix
     _, second_dim, third_dim = cost_matrix.shape
-    
     # Check if the second dimension size is less than half of the third dimension size
-    if second_dim * 2 < third_dim:
+    # print('second_dim', second_dim)
+    # print('third_dim', third_dim)
+    if second_dim * adjust_thre < third_dim:
         # If the condition is met, multiply thresholds by kain
-        thresholds = {key: value * kain for key, value in thresholds.items()}
-    
+        thresholds = {key: value * kain.get(key, 1) for key, value in thresholds.items()}
+        # print('###########ADJUST##########')
+
     return thresholds
 
-def Hungarian(cost_matrix, thresholds, adjust=False):
+def Hungarian(cost_matrix, thresholds):
     """
     Refer: https://github.com/lixiaoyu2000/Poly-MOT/blob/main/utils/matching.py
     Info: This function implements the Hungarian algorithm using the Linear Assignment Problem solver (lapjv).
@@ -107,8 +107,6 @@ def Hungarian(cost_matrix, thresholds, adjust=False):
         len(thresholds) == cost_matrix.shape[0]
     ), "the number of thresholds should be equal to cost matrix number."
     
-    if adjust:
-        thresholds = adjust_thresholds(cost_matrix, thresholds)
     
     # solve cost matrix
     m_det, m_tra = [], []
@@ -169,20 +167,28 @@ def match_trajs_and_dets(trajs, dets, cfg, transform_matrix=None, is_rv=False):
     trans_cost_matrix = trans_cost_matrix[None, :, :].repeat(cls_num, axis=0)
     trans_cost_matrix[np.where(~trans_valid_mask)] = np.inf
     
+    # adjust
+    if cfg["THRESHOLD"][match_type]["ADJUST_FLAG"]:
+        threshold = cfg["THRESHOLD"][match_type]["COST_THRE"]
+        threshold = adjust_thresholds(
+            trans_cost_matrix,
+            threshold,
+            cfg["THRESHOLD"][match_type]["ADJUST_KAIN"],
+            cfg["THRESHOLD"][match_type]["ADJUST_THRE"],
+            )
 
     if min(cost_matrix.shape) > 0:
         if cfg["MATCHING"][match_type]["MATCHING_MODE"] == "Hungarian":
             m_det, m_tra, um_det, um_tra, costs = Hungarian(
                 trans_cost_matrix,
-                cfg["THRESHOLD"][match_type]["COST_THRE"],
+                threshold,
             )
             assert len(m_det) == len(m_tra)
             matched_indices = np.column_stack((m_tra, m_det))
         elif cfg["MATCHING"][match_type]["MATCHING_MODE"] == "Greedy":
             m_det, m_tra, um_det, um_tra, costs = Greedy(
                 trans_cost_matrix,
-                cfg["THRESHOLD"][match_type]["COST_THRE"],
-                cfg["MATCHING"][match_type]["ADJUST_THRE"],
+                threshold,
             )
             assert len(m_det) == len(m_tra)
             matched_indices = np.column_stack((m_tra, m_det))

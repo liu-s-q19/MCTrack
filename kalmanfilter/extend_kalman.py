@@ -294,7 +294,7 @@ class NANO_CV(KF_Base):
 
     def __init__(
         self, n=4, m=2, dt=None, P=None, Q=None, R=None, init_x=None, cfg=None, 
-        loss_type='log_likelihood_loss', init_type='iekf', derivate_type='partical', 
+        loss_type='log_likelihood_loss', init_type='iekf', derivate_type='stein', 
         iekf_max_iter=1, n_iterations=1, delta=5, c=5, beta=1e-4, lr=1.0, threshold=1e-4
     ):
         KF_Base.__init__(self, n=n, m=m, P=P, Q=Q, R=R, init_x=init_x, cfg=None)
@@ -542,7 +542,7 @@ class NANO_YAW(KF_Base):
 
     def __init__(
         self, n=2, m=2, dt=0.1, P=None, Q=None, R=None, init_x=None, cfg=None, 
-        loss_type='log_likelihood_loss', init_type='iekf', derivate_type='partical', 
+        loss_type='log_likelihood_loss', init_type='iekf', derivate_type='stein', 
         iekf_max_iter=1, n_iterations=1, delta=5, c=5, beta=1e-4, lr=1.0, threshold=1e-4
     ):
         KF_Base.__init__(self, n=n, m=m, P=P, Q=Q, R=R, init_x=init_x, cfg=None)
@@ -779,7 +779,7 @@ class NANO_SIZE(KF_Base):
 
     def __init__(
         self, n=4, m=2, dt=None, P=None, Q=None, R=None, init_x=None, cfg=None, 
-        loss_type='log_likelihood_loss', init_type='iekf', derivate_type='partical', 
+        loss_type='log_likelihood_loss', init_type='iekf', derivate_type='stein', 
         iekf_max_iter=1, n_iterations=1, delta=5, c=5, beta=1e-4, lr=1.0, threshold=1e-4
     ):
         KF_Base.__init__(self, n=n, m=m, P=P, Q=Q, R=R, init_x=init_x, cfg=None)

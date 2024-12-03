@@ -49,7 +49,10 @@ THRESHOLD:
   COST_STATE_PREDICT_RATION: {0: 1.0, 1: 1.0, 2: 1.0, 3: 0.5, 4: 1.0, 5: 1.0, 6: 1.0}
   NMS_THRE: {0: 0.04, 1: 0.08, 2: 0.08, 3: 0.06, 4: 0.08, 5: 0.12, 6: 0.05}  
   BEV:
-    ADJUST_THRE: True
+    ADJUST_FLAG: True  
+    # ADJUST_KAIN: {0: 10, 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10}
+    ADJUST_KAIN: {0: 0.99, 1: 0.99, 2: 0.95, 3: 0.65, 4: 0.99, 5: 0.99, 6: 0.99}
+    ADJUST_THRE: 9
     COST_THRE: {0: 1.10, 1: 2.06, 2: 2.00, 3: 2.06, 4: 1.60, 5: 1.26, 6: 1.16}
     WEIGHT_RO_GDIOU: {
       0: {"w1": 0.5, "w2": 1.5}, 
@@ -61,7 +64,9 @@ THRESHOLD:
       6: {"w1": 1.0, "w2": 1.0}, 
     }
   RV:
-    ADJUST_THRE: True
+    ADJUST_FLAG: False  
+    ADJUST_THRE: {0: 10, 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10}
+    ADJUST_KAIN: {0: 0.65, 1: 0.65, 2: 0.65, 3: 0.65, 4: 0.65, 5: 0.65, 6: 0.65}
     COST_THRE: {0: -0.3, 1: -0.3, 2: -0.3, 3: -0.3, 4: -0.3, 5: -0.3, 6: -0.3} 
 
   TRAJECTORY_THRE:
@@ -75,7 +80,7 @@ THRESHOLD:
     CONFIRMED_MATCHED_SCORE:  {0: 0.3, 1: 0.3, 2: 0.3, 3: 0.3, 4: 0.3, 5: 0.3, 6: 0.3} 
 
 KALMAN_FILTER_POSE:
-  MOTION_MODE: {0: "CV", 1: "CV", 2: "CV", 3: "CV", 4: "CV", 5: "CV", 6: "CV"} # CV, CA, CTRA
+  MOTION_MODE: {0: "CV", 1: "CV", 2: "CTRA", 3: "CV", 4: "CV", 5: "CV", 6: "CV"} # CV, CA, CTRA
   # MOTION_MODE: {0: "NANO_CTRA", 1: "NANO_CTRA", 2: "NANO_CTRA", 3: "NANO_CTRA", 4: "NANO_CTRA", 5: "NANO_CTRA", 6: "NANO_CTRA"}
   # MOTION_MODE: {0: "NANO", 1: "NANO", 2: "NANO", 3: "NANO", 4: "NANO", 5: "NANO", 6: "NANO"} 
   CV:
@@ -287,7 +292,7 @@ KALMAN_FILTER_SIZE:
     LOSS_TYPE: 'beta_loss' # 'weighted_loss', 'loglikelihood_loss' 'beta_loss' 'huber_loss'
     INIT_TYPE: 'iekf'
     BETA: 0.0001
-    N_ITER: 1
+    N_ITER: 2
     N: 4   # State Dimension
     M: 2   # Measure Dimension
     NOISE:
